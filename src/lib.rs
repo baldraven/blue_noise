@@ -19,7 +19,7 @@ impl Config {
     }
 }
 
-fn best_grid_dimensions(n: usize, x: usize, y: usize) -> (usize, usize) {
+pub fn best_grid_dimensions(n: usize, x: usize, y: usize) -> (usize, usize) {
     let target_aspect_ratio = x as f64 / y as f64;
     let mut best_r = 1;
     let mut best_c = n;
@@ -47,7 +47,7 @@ fn best_grid_dimensions(n: usize, x: usize, y: usize) -> (usize, usize) {
     (best_c, best_r)
 }
 
-fn fit_points_in_rectangle(rows: usize, cols: usize, width: usize, height: usize) -> Vec<(f64, f64)> {
+pub fn fit_points_in_rectangle(rows: usize, cols: usize, width: usize, height: usize) -> Vec<(f64, f64)> {
     let mut points = Vec::new();
 
     // Calculate the spacing between points
@@ -65,6 +65,9 @@ fn fit_points_in_rectangle(rows: usize, cols: usize, width: usize, height: usize
 
     points
 }
+
+
+
 
 
 #[cfg(test)]
