@@ -8,9 +8,6 @@ use blue_noise::*;
 use plotly::{Plot, Scatter};
 use plotly::common::Mode;
 
-
-
-
 fn main() {
     
     // Collecting input
@@ -20,9 +17,14 @@ fn main() {
         process::exit(1);
     });
 
+
+
+
     // Processing
-    let (cols, rows) = best_grid_dimensions(config.n as usize, 10, 5);
-    let points = fit_points_in_rectangle(rows, cols, 10, 5); 
+    let (cols, rows) = best_grid_dimensions(config.n_or_d, config.x, config.y);
+    let points = fit_points_in_rectangle(rows, cols, config.x, config.y); 
+
+
 
     // Plotting
     let x_list = points.iter().map(|(x, _)| *x).collect();

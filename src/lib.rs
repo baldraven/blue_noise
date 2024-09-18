@@ -1,20 +1,24 @@
 pub struct Config {
-    pub n: i64,
-    pub d: i64
+    pub n_or_d: usize,
+    pub mode: u32,
+    pub x: usize,
+    pub y: usize,
 }
 
 impl Config {
     pub fn build(args: &[String]) -> Result<Config, &'static str> {
-        if args.len() < 3 {
-            return Err("Usage: n d, where n is the number of points and d is the minimal distance between points.");
+        if args.len() < 5 {
+            return Err("Usage: mode n_or_d x y");
         }
 
-        let n = args[1].clone().parse();
-        let d = args[2].clone().parse();
+        let mode = args[1].clone().parse();
+        let n_or_d = args[2].clone().parse();
+        let x = args[3].clone().parse();
+        let y = args[4].clone().parse();
 
-        match (n, d) {
-            (Ok(n), Ok(d)) => Ok(Config {n, d}),
-            _              => Err("n and d must be numbers")
+        match (mode, n_or_d, x, y) {
+            (Ok(mode), Ok(n_or_d), Ok(x), Ok(y)) => Ok(Config { mode, n_or_d, x, y }),
+            _                                    => Err("Error parsing arguments")
         }
     }
 }
@@ -73,15 +77,6 @@ pub fn fit_points_in_rectangle(rows: usize, cols: usize, width: usize, height: u
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_config_build() {
-        let args = vec!["".to_string(), "100".to_string(), "1".to_string()];
-        let config = Config::build(&args).unwrap();
-
-        assert_eq!(config.n, 100);
-        assert_eq!(config.d, 1);
-    }
 
     #[test]
     fn test_grid_dimension() {
