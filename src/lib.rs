@@ -47,6 +47,25 @@ fn best_grid_dimensions(n: usize, x: usize, y: usize) -> (usize, usize) {
     (best_c, best_r)
 }
 
+fn fit_points_in_rectangle(rows: usize, cols: usize, width: usize, height: usize) -> Vec<(f64, f64)> {
+    let mut points = Vec::new();
+
+    // Calculate the spacing between points
+    let x_spacing = width as f64 / (cols + 1) as f64;
+    let y_spacing = height as f64 / (rows + 1) as f64;
+
+    for r in 0..rows {
+        for c in 0..cols {
+            // Calculate the coordinates of each point
+            let x = (c + 1) as f64 * x_spacing;
+            let y = (r + 1) as f64 * y_spacing;
+            points.push((x, y));
+        }
+    }
+
+    points
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -70,6 +89,31 @@ mod tests {
         let (r, c) = best_grid_dimensions(16, 1, 44);
         assert_eq!(r, 1);
         assert_eq!(c, 16);
+    }
+
+
+    #[test]
+    fn test_fit_points_in_rectangle() {
+        let rows = 3;
+        let cols = 4;
+        let width = 10;
+        let height = 5;
+
+        let expected_points = vec![
+            (2., 1.25), (4., 1.25), (6., 1.25), (8., 1.25),
+            (2., 2.5),  (4., 2.5),  (6., 2.5),  (8., 2.5),
+            (2., 3.75), (4., 3.75), (6., 3.75), (8., 3.75),
+        ];
+
+        let points = fit_points_in_rectangle(rows, cols, width, height);
+
+        assert_eq!(points.len(), expected_points.len());
+
+        for (point, expected) in points.iter().zip(expected_points.iter()) {
+            assert!((point.0 - expected.0).abs() < f64::EPSILON);
+            assert!((point.1 - expected.1).abs() < f64::EPSILON);
+        }
+
     }
 
 }
