@@ -12,5 +12,5 @@ The program take 4 arguments as input :
 - float : Y
 
 Current modes available :
-- 1 : without noise, with N
-- 2 : without noise, with d
+- 1 : as a grid, with N
+- 2 : as a grid, with d

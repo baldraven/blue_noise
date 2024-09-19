@@ -17,13 +17,11 @@ fn main() {
         process::exit(1);
     });
 
-
-
-
     // Processing
-    let (cols, rows) = best_grid_dimensions(config.n_or_d, config.x, config.y);
-    let points = fit_points_in_rectangle(rows, cols, config.x, config.y); 
-
+    let points = generate_points(config).unwrap_or_else(|err| {
+        println!("Problem generating points: {err}");
+        process::exit(1);
+    });
 
 
     // Plotting
