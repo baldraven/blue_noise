@@ -1,11 +1,12 @@
 pub mod mode1;
 pub mod mode2;
+pub mod mode3;
 
 pub struct Config {
-    pub n_or_d: usize,
+    pub n_or_d: f64,
     pub mode: u32,
-    pub x: usize,
-    pub y: usize,
+    pub x: f64,
+    pub y: f64,
 }
 
 impl Config {
@@ -15,9 +16,11 @@ impl Config {
         }
 
         let mode = args[1].clone().parse();
-        let n_or_d = args[2].clone().parse();
         let x = args[3].clone().parse();
         let y = args[4].clone().parse();
+        let n_or_d = args[2].clone().parse();
+
+
 
         match (mode, n_or_d, x, y) {
             (Ok(mode), Ok(n_or_d), Ok(x), Ok(y)) => Ok(Config { mode, n_or_d, x, y }),
@@ -29,10 +32,13 @@ impl Config {
 pub fn generate_points(config: Config) -> Result<Vec<(f64, f64)>, &'static str> {
     match config.mode {
         1 => {
-            Ok(mode1::generate_points(config.n_or_d, config.x, config.y))
+            Ok(mode1::generate_points(config.n_or_d as usize, config.x as usize, config.y as usize))
         },
         2 => {
-            Ok(mode2::generate_points(config.n_or_d as f64, config.x as f64, config.y as f64))
+            Ok(mode2::generate_points(config.n_or_d as f64, config.x, config.y))
+        },
+        3 => {
+            Ok(mode3::generate_points(config.n_or_d as f64, config.x, config.y))
         },
         _ => {
             Err("Invalid mode")

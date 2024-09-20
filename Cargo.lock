@@ -62,6 +62,7 @@ name = "blue_noise"
 version = "0.1.0"
 dependencies = [
  "plotly",
+ "rand",
 ]
 
 [[package]]
