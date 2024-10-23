@@ -1,6 +1,7 @@
 pub mod mode1;
 pub mod mode2;
 pub mod mode3;
+pub mod jfa;
 
 pub struct Config {
     pub n_or_d: f64,
@@ -8,6 +9,7 @@ pub struct Config {
     pub x: f64,
     pub y: f64,
 }
+
 
 impl Config {
     pub fn build(args: &[String]) -> Result<Config, &'static str> {
@@ -29,7 +31,7 @@ impl Config {
     }
 }
 
-pub fn generate_points(config: Config) -> Result<Vec<(f64, f64)>, &'static str> {
+pub fn generate_points(config: &Config) -> Result<Vec<(f64, f64)>, &'static str> {
     match config.mode {
         1 => {
             Ok(mode1::generate_points(config.n_or_d as usize, config.x as usize, config.y as usize))
@@ -44,4 +46,8 @@ pub fn generate_points(config: Config) -> Result<Vec<(f64, f64)>, &'static str> 
             Err("Invalid mode")
         }
     }
+}
+
+pub fn generate_cells(points: &Vec<(f64, f64)>, config: &Config) -> Result<Vec<usize>, &'static str> {
+    jfa::jfa(points, (config.x, config.y))
 }
