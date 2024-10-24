@@ -3,6 +3,7 @@ static RESO: usize = 512;
 fn jfa_step(pixel_grid: &mut Vec<usize>, normal_points: &Vec<(usize, usize)>, k: usize) {
     for x in 0..RESO {
         for y in 0..RESO {
+            let initial_poisition = x + y * RESO;
             // Check the 8-neighborhood (jump in all directions) and update to the closest point
             for dx in [-1, 0, 1] {
                 for dy in [-1, 0, 1] {
@@ -13,7 +14,6 @@ fn jfa_step(pixel_grid: &mut Vec<usize>, normal_points: &Vec<(usize, usize)>, k:
                         continue;
                     }
 
-                    let initial_poisition = x + y * RESO;
                     let new_position = (new_x as usize) + (new_y as usize) * RESO;
                     let found_color = pixel_grid[new_position];
                     let current_color = pixel_grid[initial_poisition];
@@ -33,6 +33,7 @@ fn jfa_step(pixel_grid: &mut Vec<usize>, normal_points: &Vec<(usize, usize)>, k:
                     // so we'll assign the closest color to the current pixel
                     let point1 = normal_points[current_color - 1];
                     let point2 = normal_points[found_color - 1];
+
                     let dist1 = ((x as isize - point1.0 as isize).pow(2) + (y as isize - point1.1 as isize).pow(2)) as f64;
                     let dist2 = ((x as isize - point2.0 as isize).pow(2) + (y as isize - point2.1 as isize).pow(2)) as f64;
 
@@ -63,10 +64,11 @@ pub fn jfa(points: &Vec<(f64, f64)>, config: (f64, f64)) -> Result<Vec<usize>, &
 
     // Main JFA loop
     let mut k = normal_points.len() / 2 ;
+    jfa_step(&mut pixel_grid, &normal_points, 1); // 1+JFA for more precision, cf Wikipedia
     while k >= 1 {
         println!("Entering loop with k = {}", k);
         jfa_step(&mut pixel_grid, &normal_points, k);
-        k /= 2
+        k/=2;
     }
 
     Ok(pixel_grid)
@@ -84,7 +86,7 @@ mod tests{
         let pixel_grid = jfa(&points, config).unwrap();
 
         assert_eq!(pixel_grid[12], 0);
-        assert_eq!(pixel_grid[512*256+256], 1);
+        assert_eq!(pixel_grid[512*RESO/2+RESO/2], 1);
     }
 
 }

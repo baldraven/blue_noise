@@ -25,7 +25,7 @@ fn main() {
 
     // Plotting
     plot::plot_points(&points);
-    plot::plot_heatmap_with_points(pixels, &points, 512, points.len(), (config.x, config.y));
+    plot::plot_heatmap_with_points(pixels, &points, (config.x, config.y));
 
     // Writing to file
     let mut file = File::create("points.csv").expect("Unable to create file");

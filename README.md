@@ -15,3 +15,5 @@ Current modes available :
 - 1 : as a grid, with N
 - 2 : as a grid, with d
 - 3 : with fast Poisson disk sampling algorithm, with d
+
+It also offers visualization with Jump Flooding Voronoi diagram.
