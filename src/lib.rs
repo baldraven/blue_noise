@@ -1,7 +1,7 @@
-pub mod mode1;
-pub mod mode2;
-pub mod mode3;
-pub mod jfa;
+mod mode1;
+mod mode2;
+mod mode3;
+mod jfa;
 
 pub struct Config {
     pub n_or_d: f64,
@@ -9,7 +9,6 @@ pub struct Config {
     pub x: f64,
     pub y: f64,
 }
-
 
 impl Config {
     pub fn build(args: &[String]) -> Result<Config, &'static str> {

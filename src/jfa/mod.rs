@@ -6,52 +6,40 @@ fn jfa_step(pixel_grid: &mut Vec<usize>, normal_points: &Vec<(usize, usize)>, k:
             // Check the 8-neighborhood (jump in all directions) and update to the closest point
             for dx in [-1, 0, 1] {
                 for dy in [-1, 0, 1] {
-                    if dx == 0 && dy == 0 {
-                        continue;
-                    }
-
                     let new_x = x as isize + dx * k as isize;
                     let new_y = y as isize + dy * k as isize;
 
-                    // Ensure the new coordinates are within bounds
                     if !(new_x >= 0 && new_x < RESO as isize && new_y >= 0 && new_y < RESO as isize) {
                         continue;
                     }
 
-                    let new_idx = (new_x as usize) + (new_y as usize) * RESO;
-                    let found_color = pixel_grid[new_idx];
+                    let initial_poisition = x + y * RESO;
+                    let new_position = (new_x as usize) + (new_y as usize) * RESO;
+                    let found_color = pixel_grid[new_position];
+                    let current_color = pixel_grid[initial_poisition];
 
-
-                    if found_color == 0 {
+                    if  (dx == 0 && dy == 0) 
+                            || found_color == 0
+                            || current_color == found_color {
                         continue;
                     }
 
-                    let current_color = pixel_grid[x + y * RESO];
                     if current_color == 0 {
-                        pixel_grid[x + y * RESO] = found_color;
+                        pixel_grid[initial_poisition] = found_color;
                         continue;
                     }
 
-                    if current_color == found_color {
-                        continue;
-                    }
-
-                    // we're now in the case where we have two colors.
-                    // we need to find the original coordinates of the two colors, in the normal_points vector, and calculate distances
-                   
-                    let point1 = normal_points[current_color - 1]; // current color
-                    let point2 = normal_points[found_color - 1];   // found color
-
-                    // Calculate the distance from the current pixel to each point
-                    let dist1 = ((x as isize - point1.0 as isize).pow(2)
-                        + (y as isize - point1.1 as isize).pow(2)) as f64;
-                    let dist2 = ((x as isize - point2.0 as isize).pow(2)
-                        + (y as isize - point2.1 as isize).pow(2)) as f64;
+                    // we're now in the case where we have two colors distinct colors
+                    // so we'll assign the closest color to the current pixel
+                    let point1 = normal_points[current_color - 1];
+                    let point2 = normal_points[found_color - 1];
+                    let dist1 = ((x as isize - point1.0 as isize).pow(2) + (y as isize - point1.1 as isize).pow(2)) as f64;
+                    let dist2 = ((x as isize - point2.0 as isize).pow(2) + (y as isize - point2.1 as isize).pow(2)) as f64;
 
                     //dbg!(point1, point2, (x,y), dist1, dist2);
 
                     if dist2 < dist1 {
-                        pixel_grid[x + y * RESO] = found_color;
+                        pixel_grid[initial_poisition] = found_color;
                     }
                 }
             }
@@ -61,20 +49,19 @@ fn jfa_step(pixel_grid: &mut Vec<usize>, normal_points: &Vec<(usize, usize)>, k:
 
 
 pub fn jfa(points: &Vec<(f64, f64)>, config: (f64, f64)) -> Result<Vec<usize>, &'static str> {
-
-    // let's normalize points position relative with the config box size x and y.
     let normal_points: Vec<(usize, usize)> = points.into_iter()
         .map(|(a, b)| ((a * RESO as f64 / config.0) as usize, (b * RESO as f64 / config.1) as usize))
         .collect();
 
     let mut pixel_grid = vec![0; (RESO * RESO) as usize];
 
-    // Mark the initial points on the grid with their respective color (index + 1)
+    // Mark the initial points on the grid with their respective color
     for (i, point) in normal_points.iter().enumerate() {
         let color = i+1; // 0 means uncolored
         pixel_grid[point.0 + point.1*RESO] = color;
     }
 
+    // Main JFA loop
     let mut k = normal_points.len() / 2 ;
     while k >= 1 {
         println!("Entering loop with k = {}", k);
