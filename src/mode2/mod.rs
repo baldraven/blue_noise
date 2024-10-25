@@ -1,4 +1,4 @@
-pub fn generate_points(d: f64, width: f64,height: f64) -> Vec<(f64, f64)> {
+pub fn generate_points(d: f64, width: f64, height: f64) -> Vec<(f64, f64)> {
     let mut points = Vec::new();
 
     // Calculate how many points fit along the width and height based on distance `d`
@@ -18,7 +18,7 @@ pub fn generate_points(d: f64, width: f64,height: f64) -> Vec<(f64, f64)> {
 }
 
 #[cfg(test)]
-mod test{
+mod test {
     use super::*;
 
     #[test]
@@ -30,7 +30,6 @@ mod test{
         let expected_num_points = (10 + 1) * (10 + 1); // 11 * 11 = 121
         assert_eq!(points.len(), expected_num_points);
     }
-
 
     #[test]
     fn test_generate_grid_points_spacing() {
@@ -45,9 +44,14 @@ mod test{
                     let distance_y = (y2 - y1).abs();
 
                     // Points should be at least 10 units apart on the grid
-                    assert!(distance_x >= 10.0 || distance_y >= 10.0,
+                    assert!(
+                        distance_x >= 10.0 || distance_y >= 10.0,
                         "Points ({}, {}) and ({}, {}) are too close",
-                        x1, y1, x2, y2);
+                        x1,
+                        y1,
+                        x2,
+                        y2
+                    );
                 }
             }
         }

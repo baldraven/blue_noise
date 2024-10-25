@@ -16,4 +16,5 @@ Current modes available :
 - 2 : as a grid, with d
 - 3 : with fast Poisson disk sampling algorithm, with d
 
-It offers output as a file points.csv, and a HTML visualisation.
+
+It offers HTML visualization of the generated points and the associated Jump Flooding Voronoi diagram, and output in points.csv.

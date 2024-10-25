@@ -56,12 +56,11 @@ mod tests {
         let (r, c) = best_grid_dimensions(16, 8, 8);
         assert_eq!(r, 4);
         assert_eq!(c, 4);
-        
+
         let (r, c) = best_grid_dimensions(16, 1, 44);
         assert_eq!(r, 1);
         assert_eq!(c, 16);
     }
-
 
     #[test]
     fn test_fit_points_in_rectangle() {
@@ -70,9 +69,18 @@ mod tests {
         let height = 5;
 
         let expected_points = vec![
-            (2., 1.25), (4., 1.25), (6., 1.25), (8., 1.25),
-            (2., 2.5),  (4., 2.5),  (6., 2.5),  (8., 2.5),
-            (2., 3.75), (4., 3.75), (6., 3.75), (8., 3.75),
+            (2., 1.25),
+            (4., 1.25),
+            (6., 1.25),
+            (8., 1.25),
+            (2., 2.5),
+            (4., 2.5),
+            (6., 2.5),
+            (8., 2.5),
+            (2., 3.75),
+            (4., 3.75),
+            (6., 3.75),
+            (8., 3.75),
         ];
 
         let points = generate_points(n, width, height);
@@ -83,6 +91,5 @@ mod tests {
             assert!((point.0 - expected.0).abs() < f64::EPSILON);
             assert!((point.1 - expected.1).abs() < f64::EPSILON);
         }
-
     }
 }

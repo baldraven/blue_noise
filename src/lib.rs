@@ -1,6 +1,7 @@
-pub mod mode1;
-pub mod mode2;
-pub mod mode3;
+mod jfa;
+mod mode1;
+mod mode2;
+mod mode3;
 
 pub struct Config {
     pub n_or_d: f64,
@@ -20,28 +21,37 @@ impl Config {
         let y = args[4].clone().parse();
         let n_or_d = args[2].clone().parse();
 
-
-
         match (mode, n_or_d, x, y) {
             (Ok(mode), Ok(n_or_d), Ok(x), Ok(y)) => Ok(Config { mode, n_or_d, x, y }),
-            _                                    => Err("Error parsing arguments")
+            _ => Err("Error parsing arguments"),
         }
     }
 }
 
-pub fn generate_points(config: Config) -> Result<Vec<(f64, f64)>, &'static str> {
+pub fn generate_points(config: &Config) -> Result<Vec<(f64, f64)>, &'static str> {
     match config.mode {
-        1 => {
-            Ok(mode1::generate_points(config.n_or_d as usize, config.x as usize, config.y as usize))
-        },
-        2 => {
-            Ok(mode2::generate_points(config.n_or_d as f64, config.x, config.y))
-        },
-        3 => {
-            Ok(mode3::generate_points(config.n_or_d as f64, config.x, config.y))
-        },
-        _ => {
-            Err("Invalid mode")
-        }
+        1 => Ok(mode1::generate_points(
+            config.n_or_d as usize,
+            config.x as usize,
+            config.y as usize,
+        )),
+        2 => Ok(mode2::generate_points(
+            config.n_or_d as f64,
+            config.x,
+            config.y,
+        )),
+        3 => Ok(mode3::generate_points(
+            config.n_or_d as f64,
+            config.x,
+            config.y,
+        )),
+        _ => Err("Invalid mode"),
     }
+}
+
+pub fn generate_cells(
+    points: &Vec<(f64, f64)>,
+    config: &Config,
+) -> Result<Vec<usize>, &'static str> {
+    jfa::jfa(points, (config.x, config.y))
 }
