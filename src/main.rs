@@ -1,7 +1,7 @@
-use std::{env, process};
+use blue_noise::*;
 use std::fs::File;
 use std::io::Write;
-use blue_noise::*;
+use std::{env, process};
 pub mod plot;
 
 fn main() {
@@ -30,7 +30,8 @@ fn main() {
     // Writing to file
     let mut file = File::create("points.csv").expect("Unable to create file");
     for (x, y) in points {
-        file.write_all(format!("{},{}\n", x, y).as_bytes()).expect("Unable to write data");
+        file.write_all(format!("{},{}\n", x, y).as_bytes())
+            .expect("Unable to write data");
     }
     println!("Points written to points.csv");
 }

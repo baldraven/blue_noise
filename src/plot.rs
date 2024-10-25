@@ -1,7 +1,11 @@
-use plotly::{Plot, Scatter, HeatMap,Layout};
-use plotly::common::{Mode, ColorScalePalette};
+use plotly::common::{ColorScalePalette, Mode};
+use plotly::{HeatMap, Layout, Plot, Scatter};
 
-pub fn plot_heatmap_with_points(data: Vec<usize>, points: &Vec<(f64, f64)>, config_dimension: (f64, f64)) {
+pub fn plot_heatmap_with_points(
+    data: Vec<usize>,
+    points: &Vec<(f64, f64)>,
+    config_dimension: (f64, f64),
+) {
     let reso = (data.len() as f64).sqrt() as usize;
 
     // Reshape the data into a 2D grid (Vec<Vec<usize>>)
@@ -13,17 +17,23 @@ pub fn plot_heatmap_with_points(data: Vec<usize>, points: &Vec<(f64, f64)>, conf
     }
 
     // Convert the grid to a 2D f64 array (required by HeatMap)
-    let grid_f64: Vec<Vec<f64>> = grid.into_iter()
+    let grid_f64: Vec<Vec<f64>> = grid
+        .into_iter()
         .map(|row| row.into_iter().map(|v| v as f64).collect())
         .collect();
 
     let colorscale = ColorScalePalette::Viridis;
-    let heatmap = HeatMap::new_z(grid_f64)
-        .color_scale(colorscale.into());
+    let heatmap = HeatMap::new_z(grid_f64).color_scale(colorscale.into());
 
-    let normalized_points: Vec<(f64, f64)> = points.iter()
-    .map(|(px, py)| (*px * reso as f64 / config_dimension.0, *py * reso as f64 / config_dimension.1))  // Scale points to match the heatmap resolution
-    .collect();
+    let normalized_points: Vec<(f64, f64)> = points
+        .iter()
+        .map(|(px, py)| {
+            (
+                *px * reso as f64 / config_dimension.0,
+                *py * reso as f64 / config_dimension.1,
+            )
+        }) // Scale points to match the heatmap resolution
+        .collect();
 
     // Prepare the points for scatter plot
     let x_list: Vec<f64> = normalized_points.iter().map(|(x, _)| *x).collect();
@@ -36,10 +46,7 @@ pub fn plot_heatmap_with_points(data: Vec<usize>, points: &Vec<(f64, f64)>, conf
     plot.add_trace(heatmap);
     plot.add_trace(scatter);
 
-    let layout = Layout::new()
-        .height(1024)
-        .width(1024)
-        .auto_size(false);
+    let layout = Layout::new().height(1024).width(1024).auto_size(false);
     plot.set_layout(layout);
 
     plot.show();
@@ -47,7 +54,7 @@ pub fn plot_heatmap_with_points(data: Vec<usize>, points: &Vec<(f64, f64)>, conf
 
 pub fn plot_points(points: &Vec<(f64, f64)>) {
     let x_list = points.iter().map(|(x, _)| *x).collect();
-    let y_list = points.iter().map(|(_, y)| *y).collect();   
+    let y_list = points.iter().map(|(_, y)| *y).collect();
     let mut plot = Plot::new();
     let trace = Scatter::new(x_list, y_list).mode(Mode::Markers);
     plot.add_trace(trace);
