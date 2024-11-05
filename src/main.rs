@@ -18,7 +18,7 @@ fn main() {
         process::exit(1);
     });
 
-     let pixels = generate_cells(&points, &config).unwrap_or_else(|err| {
+    let pixels = generate_cells(&points, &config).unwrap_or_else(|err| {
         println!("Problem running JFA: {err}");
         process::exit(1);
     });
@@ -28,7 +28,7 @@ fn main() {
     plot::plot_heatmap_with_points(pixels, &points, (config.x, config.y));
 
     // Writing to file
-  /*   let mut file = File::create("points.csv").expect("Unable to create file");
+    /*   let mut file = File::create("points.csv").expect("Unable to create file");
     for (x, y) in points {
         file.write_all(format!("{},{}\n", x, y).as_bytes())
             .expect("Unable to write data");

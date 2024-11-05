@@ -4,60 +4,63 @@ async fn run(points: &Vec<(f64, f64)>, config: (f64, f64)) -> [u32; RESO * RESO]
     let context = WgpuContext::new(RESO * RESO * std::mem::size_of::<u32>()).await;
     let mut local_buffer = init_seeds_in_buffer(points, config);
 
-    let mut k = (RESO / 2).max(1) as u32; // Initial k value
+    let mut k = (RESO / 2).max(1) as u32;
 
+    jfa_step(&context, &mut local_buffer, 1).await;
     while k >= 1 {
-        log::info!("Dispatching JFA step with k = {}", k);
-
-        context.queue.write_buffer(
-            &context.storage_buffer,
-            0,
-            bytemuck::cast_slice(&local_buffer),
-        );
-
-        // Write the current `k` value to the step buffer
-        context
-            .queue
-            .write_buffer(&context.step_buffer, 0, bytemuck::cast_slice(&[k]));
-
-        let mut command_encoder = context
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
-        {
-            let mut compute_pass =
-                command_encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
-                    label: None,
-                    timestamp_writes: None,
-                });
-            compute_pass.set_pipeline(&context.pipeline);
-            compute_pass.set_bind_group(0, &context.bind_group, &[]);
-            compute_pass.dispatch_workgroups((RESO / 16) as u32, (RESO / 16) as u32, 1);
-        }
-
-        command_encoder.copy_buffer_to_buffer(
-            &context.storage_buffer,
-            0,
-            &context.output_staging_buffer,
-            0,
-            context.storage_buffer.size(),
-        );
-
-        context.queue.submit(Some(command_encoder.finish()));
-        log::info!("Submitted commands.");
-
-        get_data(
-            &mut local_buffer,
-            &context.storage_buffer,
-            &context.output_staging_buffer,
-            &context.device,
-            &context.queue,
-        )
-        .await;
-        log::info!("Results: {local_buffer:?}");
+        jfa_step(&context, &mut local_buffer, k).await;
         k /= 2;
     }
 
     local_buffer
+}
+
+async fn jfa_step(context: &WgpuContext, local_buffer: &mut [u32], k: u32) {
+    log::info!("Dispatching JFA step with k = {}", k);
+
+    context.queue.write_buffer(
+        &context.storage_buffer,
+        0,
+        bytemuck::cast_slice(&local_buffer),
+    );
+
+    context
+        .queue
+        .write_buffer(&context.step_buffer, 0, bytemuck::cast_slice(&[k]));
+
+    let mut command_encoder = context
+        .device
+        .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+    {
+        let mut compute_pass = command_encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+            label: None,
+            timestamp_writes: None,
+        });
+        compute_pass.set_pipeline(&context.pipeline);
+        compute_pass.set_bind_group(0, &context.bind_group, &[]);
+        compute_pass.dispatch_workgroups((RESO / 16) as u32, (RESO / 16) as u32, 1);
+    }
+
+    command_encoder.copy_buffer_to_buffer(
+        &context.storage_buffer,
+        0,
+        &context.output_staging_buffer,
+        0,
+        context.storage_buffer.size(),
+    );
+
+    context.queue.submit(Some(command_encoder.finish()));
+    log::info!("Submitted commands.");
+
+    get_data(
+        local_buffer,
+        &context.storage_buffer,
+        &context.output_staging_buffer,
+        &context.device,
+        &context.queue,
+    )
+    .await;
+    //log::info!("Results: {local_buffer:?}");
 }
 
 async fn get_data<T: bytemuck::Pod>(
@@ -109,7 +112,7 @@ fn init_seeds_in_buffer(points: &Vec<(f64, f64)>, config: (f64, f64)) -> [u32; R
     local_buffer //TODO: perf cost of this?
 }
 
-pub fn main(points: &Vec<(f64, f64)>, config: (f64, f64)) -> Result<Vec<usize>, &'static str>{
+pub fn main(points: &Vec<(f64, f64)>, config: (f64, f64)) -> Result<Vec<usize>, &'static str> {
     env_logger::builder()
         .filter_level(log::LevelFilter::Info)
         .format_timestamp_nanos()
@@ -151,7 +154,6 @@ impl WgpuContext {
 
         let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
 
-        // Create storage buffer for the pixel grid
         let storage_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
             size: buffer_size as wgpu::BufferAddress,
@@ -168,7 +170,6 @@ impl WgpuContext {
             mapped_at_creation: false,
         });
 
-        // Create a buffer to hold the step size (k)
         let step_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
             size: std::mem::size_of::<u32>() as wgpu::BufferAddress,
@@ -176,7 +177,6 @@ impl WgpuContext {
             mapped_at_creation: false, //TODO: usage ?
         });
 
-        // Create bind group layout with an extra entry for the step buffer
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: None,
             entries: &[
@@ -203,7 +203,6 @@ impl WgpuContext {
             ],
         });
 
-        // Create bind group
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: None,
             layout: &bind_group_layout,
@@ -219,7 +218,6 @@ impl WgpuContext {
             ],
         });
 
-        // Create pipeline layout and pipeline
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: None,
             bind_group_layouts: &[&bind_group_layout],

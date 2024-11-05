@@ -50,7 +50,9 @@ pub fn generate_points(config: &Config) -> Result<Vec<(f64, f64)>, &'static str>
     }
 }
 
-pub fn generate_cells(points: &Vec<(f64, f64)>, config: &Config) 
-    -> Result<Vec<usize>, &'static str> {
+pub fn generate_cells(
+    points: &Vec<(f64, f64)>,
+    config: &Config,
+) -> Result<Vec<usize>, &'static str> {
     jfa_wgpu::main(points, (config.x, config.y))
 }
