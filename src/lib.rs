@@ -1,4 +1,5 @@
 mod jfa;
+mod jfa_wgpu;
 mod mode1;
 mod mode2;
 mod mode3;
@@ -49,9 +50,7 @@ pub fn generate_points(config: &Config) -> Result<Vec<(f64, f64)>, &'static str>
     }
 }
 
-pub fn generate_cells(
-    points: &Vec<(f64, f64)>,
-    config: &Config,
-) -> Result<Vec<usize>, &'static str> {
-    jfa::jfa(points, (config.x, config.y))
+pub fn generate_cells(points: &Vec<(f64, f64)>, config: &Config) 
+    -> Result<Vec<usize>, &'static str> {
+    jfa_wgpu::main(points, (config.x, config.y))
 }
