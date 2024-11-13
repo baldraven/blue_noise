@@ -40,13 +40,13 @@ pub fn plot_heatmap_with_points(
     let y_list: Vec<f64> = normalized_points.iter().map(|(_, y)| *y).collect();
     let scatter = Scatter::new(x_list, y_list)
         .mode(Mode::Markers)
-        .marker(plotly::common::Marker::new().size(10).color("#000000")); // Black markers for points
+        .marker(plotly::common::Marker::new().size(40).color("#000000")); // Black markers for points
 
     let mut plot = Plot::new();
     plot.add_trace(heatmap);
     plot.add_trace(scatter);
 
-    let layout = Layout::new().height(1024).width(1024).auto_size(false);
+    let layout = Layout::new().height(2048).width(2048).auto_size(false);
     plot.set_layout(layout);
 
     plot.show();
@@ -56,9 +56,13 @@ pub fn plot_points(points: &Vec<(f64, f64)>) {
     let x_list = points.iter().map(|(x, _)| *x).collect();
     let y_list = points.iter().map(|(_, y)| *y).collect();
     let mut plot = Plot::new();
-    let trace = Scatter::new(x_list, y_list).mode(Mode::Markers);
+
+    let trace = Scatter::new(x_list, y_list)
+        .mode(Mode::Markers)
+        .marker(plotly::common::Marker::new().size(40)); // Black markers for points
     plot.add_trace(trace);
-    let layout = Layout::new().height(1024).width(1024).auto_size(false);
+    let layout = Layout::new().height(2048).width(2048).auto_size(false);
+
     plot.set_layout(layout);
     plot.show();
     println!("Points plotted");

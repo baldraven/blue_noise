@@ -18,7 +18,7 @@ fn main() {
         process::exit(1);
     });
 
-    let pixels = generate_cells(&points, &config).unwrap_or_else(|err| {
+    let pixels = generate_cells_cpu(&points, &config).unwrap_or_else(|err| {
         println!("Problem running JFA: {err}");
         process::exit(1);
     });
