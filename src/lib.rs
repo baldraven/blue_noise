@@ -62,4 +62,3 @@ pub fn generate_cells_cpu(
     config: &Config,
 ) -> Result<Vec<usize>, &'static str> {
     jfa_cpu::jfa(points, (config.x, config.y))
-}
