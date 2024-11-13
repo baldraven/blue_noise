@@ -1,8 +1,26 @@
 const RESO: usize = 512;
 
 async fn run(points: &Vec<(f64, f64)>, config: (f64, f64)) -> [u32; RESO * RESO] {
-    let context = WgpuContext::new(RESO * RESO * std::mem::size_of::<u32>()).await;
-    let mut local_buffer = init_seeds_in_buffer(points, config);
+    let context = WgpuContext::new(
+        RESO * RESO * std::mem::size_of::<u32>(),
+        points.len() * std::mem::size_of::<(u32, u32)>(),
+    )
+    .await;
+
+    let normal_points = init_normal_points(points, config);
+    let mut local_buffer = init_seeds_in_buffer(&normal_points);
+
+    // Flatten normal_points
+    let normal_points: Vec<u32> = normal_points
+        .iter()
+        .flat_map(|(x, y)| vec![*x, *y])
+        .collect();
+
+    context.queue.write_buffer(
+        &context.normal_points,
+        0,
+        bytemuck::cast_slice(&normal_points),
+    );
 
     let mut k = (RESO / 2).max(1) as u32;
 
@@ -52,6 +70,7 @@ async fn jfa_step(context: &WgpuContext, local_buffer: &mut [u32], k: u32) {
     context.queue.submit(Some(command_encoder.finish()));
     log::info!("Submitted commands.");
 
+    //TODO: don't get data until the end https://github.com/gfx-rs/wgpu/wiki/Do's-and-Dont's
     get_data(
         local_buffer,
         &context.storage_buffer,
@@ -89,25 +108,27 @@ async fn get_data<T: bytemuck::Pod>(
     staging_buffer.unmap();
 }
 
-fn init_seeds_in_buffer(points: &Vec<(f64, f64)>, config: (f64, f64)) -> [u32; RESO * RESO] {
-    let mut local_buffer = [0u32; RESO * RESO];
-
-    let normal_points: Vec<(usize, usize)> = points
+fn init_normal_points(points: &Vec<(f64, f64)>, config: (f64, f64)) -> Vec<(u32, u32)> {
+    points
         .into_iter()
         .map(|(a, b)| {
-            let x = ((a * RESO as f64 / config.0).min(RESO as f64 - 1.0)) as usize;
-            let y = ((b * RESO as f64 / config.1).min(RESO as f64 - 1.0)) as usize;
+            let x = ((a * RESO as f64 / config.0).min(RESO as f64 - 1.0)) as u32;
+            let y = ((b * RESO as f64 / config.1).min(RESO as f64 - 1.0)) as u32;
             (x, y)
         })
-        .collect();
+        .collect()
+}
+
+fn init_seeds_in_buffer(normal_points: &Vec<(u32, u32)>) -> [u32; RESO * RESO] {
+    let mut local_buffer = [0u32; RESO * RESO];
 
     // Mark the initial points on the grid with their respective color
     for (i, point) in normal_points.iter().enumerate() {
         let color = i + 1; // 0 means uncolored
-        local_buffer[point.0 + point.1 * RESO] = color as u32;
+        local_buffer[point.0 as usize + point.1 as usize * RESO] = color as u32;
     }
 
-    log::info!("Pre-res: {local_buffer:?}");
+    //log::info!("Pre-res: {local_buffer:?}");
 
     local_buffer //TODO: perf cost of this?
 }
@@ -130,10 +151,11 @@ struct WgpuContext {
     storage_buffer: wgpu::Buffer,
     output_staging_buffer: wgpu::Buffer,
     step_buffer: wgpu::Buffer,
+    normal_points: wgpu::Buffer,
 }
 
 impl WgpuContext {
-    async fn new(buffer_size: usize) -> WgpuContext {
+    async fn new(buffer_size: usize, points_size: usize) -> WgpuContext {
         let instance = wgpu::Instance::default();
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions::default())
@@ -177,6 +199,13 @@ impl WgpuContext {
             mapped_at_creation: false, //TODO: usage ?
         });
 
+        let normal_points = device.create_buffer(&wgpu::BufferDescriptor {
+            label: None,
+            size: points_size as wgpu::BufferAddress,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: None,
             entries: &[
@@ -200,6 +229,16 @@ impl WgpuContext {
                     },
                     count: None,
                 },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 2,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
             ],
         });
 
@@ -214,6 +253,10 @@ impl WgpuContext {
                 wgpu::BindGroupEntry {
                     binding: 1,
                     resource: step_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: normal_points.as_entire_binding(),
                 },
             ],
         });
@@ -240,6 +283,11 @@ impl WgpuContext {
             storage_buffer,
             output_staging_buffer,
             step_buffer,
+            normal_points,
         }
     }
 }
+
+/* #[cfg(test)]
+mod tests;
+ */

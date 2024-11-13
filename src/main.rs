@@ -24,14 +24,14 @@ fn main() {
     });
 
     // Plotting
-    //plot::plot_points(&points);
+    plot::plot_points(&points);
     plot::plot_heatmap_with_points(pixels, &points, (config.x, config.y));
 
     // Writing to file
-    /*   let mut file = File::create("points.csv").expect("Unable to create file");
+    let mut file = File::create("points.csv").expect("Unable to create file");
     for (x, y) in points {
         file.write_all(format!("{},{}\n", x, y).as_bytes())
             .expect("Unable to write data");
     }
-    println!("Points written to points.csv"); */
+    println!("Points written to points.csv");
 }
