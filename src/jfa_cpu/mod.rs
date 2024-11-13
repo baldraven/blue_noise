@@ -70,7 +70,7 @@ pub fn jfa(points: &Vec<(f64, f64)>, config: (f64, f64)) -> Result<Vec<usize>, &
     }
 
     // Main JFA loop
-    let mut k = normal_points.len() / 2;
+    let mut k = (RESO / 2).max(1);
     jfa_step(&mut pixel_grid, &normal_points, 1); // 1+JFA for more precision
     while k >= 1 {
         println!("Entering loop with k = {}", k);
