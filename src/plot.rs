@@ -2,7 +2,7 @@ use plotly::common::{ColorScalePalette, Mode};
 use plotly::{HeatMap, Layout, Plot, Scatter};
 
 pub fn plot_heatmap_with_points(
-    data: Vec<usize>,
+    data: &Vec<usize>,
     points: &Vec<(f64, f64)>,
     config_dimension: (f64, f64),
 ) {
@@ -65,5 +65,4 @@ pub fn plot_points(points: &Vec<(f64, f64)>) {
 
     plot.set_layout(layout);
     plot.show();
-    println!("Points plotted");
 }
