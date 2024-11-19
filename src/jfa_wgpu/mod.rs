@@ -1,6 +1,6 @@
 const RESO: usize = 512;
 
-async fn run(points: &Vec<(f64, f64)>, config: (f64, f64)) -> [u32; RESO * RESO] {
+pub async fn run(points: &Vec<(f64, f64)>, config: (f64, f64)) -> Vec<u32> {
     let context = WgpuContext::new(
         RESO * RESO * std::mem::size_of::<u32>(),
         points.len() * std::mem::size_of::<(u32, u32)>(),
@@ -8,7 +8,14 @@ async fn run(points: &Vec<(f64, f64)>, config: (f64, f64)) -> [u32; RESO * RESO]
     .await;
 
     let normal_points = init_normal_points(points, config);
-    let mut local_buffer = init_seeds_in_buffer(&normal_points);
+
+    let mut local_buffer = vec![0; RESO * RESO];
+
+    // Mark the initial points on the grid with their respective color
+    for (i, point) in normal_points.iter().enumerate() {
+        let color = i + 1; // 0 means uncolored
+        local_buffer[point.0 as usize + point.1 as usize * RESO] = color as u32;
+    }
 
     // Flatten normal_points
     let normal_points: Vec<u32> = normal_points
@@ -24,17 +31,21 @@ async fn run(points: &Vec<(f64, f64)>, config: (f64, f64)) -> [u32; RESO * RESO]
 
     let mut k = (RESO / 2).max(1) as u32;
 
+    log::info!("Starting JFA iterations...");
+
     jfa_step(&context, &mut local_buffer, 1).await;
     while k >= 1 {
         jfa_step(&context, &mut local_buffer, k).await;
         k /= 2;
     }
 
+    log::info!("done!");
+
     local_buffer
 }
 
 async fn jfa_step(context: &WgpuContext, local_buffer: &mut [u32], k: u32) {
-    log::info!("Dispatching JFA step with k = {}", k);
+    //log::info!("Dispatching JFA step with k = {}", k);
 
     context.queue.write_buffer(
         &context.storage_buffer,
@@ -68,7 +79,6 @@ async fn jfa_step(context: &WgpuContext, local_buffer: &mut [u32], k: u32) {
     );
 
     context.queue.submit(Some(command_encoder.finish()));
-    log::info!("Submitted commands.");
 
     //TODO: don't get data until the end https://github.com/gfx-rs/wgpu/wiki/Do's-and-Dont's
     get_data(
@@ -79,7 +89,6 @@ async fn jfa_step(context: &WgpuContext, local_buffer: &mut [u32], k: u32) {
         &context.queue,
     )
     .await;
-    //log::info!("Results: {local_buffer:?}");
 }
 
 async fn get_data<T: bytemuck::Pod>(
@@ -119,28 +128,14 @@ fn init_normal_points(points: &Vec<(f64, f64)>, config: (f64, f64)) -> Vec<(u32,
         .collect()
 }
 
-fn init_seeds_in_buffer(normal_points: &Vec<(u32, u32)>) -> [u32; RESO * RESO] {
-    let mut local_buffer = [0u32; RESO * RESO];
-
-    // Mark the initial points on the grid with their respective color
-    for (i, point) in normal_points.iter().enumerate() {
-        let color = i + 1; // 0 means uncolored
-        local_buffer[point.0 as usize + point.1 as usize * RESO] = color as u32;
-    }
-
-    //log::info!("Pre-res: {local_buffer:?}");
-
-    local_buffer //TODO: perf cost of this?
-}
-
 pub fn main(points: &Vec<(f64, f64)>, config: (f64, f64)) -> Result<Vec<usize>, &'static str> {
-    env_logger::builder()
-        .filter_level(log::LevelFilter::Info)
-        .format_timestamp_nanos()
-        .init();
+    /*     env_logger::builder()
+    .filter_level(log::LevelFilter::Info)
+    .format_timestamp_nanos()
+    .init(); */
     let a = pollster::block_on(run(&points, config));
 
-    Ok(a.iter().map(|x| *x as usize).collect())
+    Ok(a.into_iter().map(|x| x as usize).collect())
 }
 
 struct WgpuContext {
