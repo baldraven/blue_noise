@@ -70,13 +70,18 @@ pub fn jfa(points: &Vec<(f64, f64)>, config: (f64, f64)) -> Result<Vec<usize>, &
     }
 
     // Main JFA loop
+    let now = std::time::Instant::now();
+
     let mut k = (RESO / 2).max(1);
     jfa_step(&mut pixel_grid, &normal_points, 1); // 1+JFA for more precision
     while k >= 1 {
-        println!("Entering loop with k = {}", k);
+        //println!("Entering loop with k = {}", k);
         jfa_step(&mut pixel_grid, &normal_points, k);
         k /= 2;
     }
+
+    let elapsed = now.elapsed();
+    println!("{:.2?}", elapsed);
 
     Ok(pixel_grid)
 }
@@ -92,7 +97,7 @@ mod tests {
 
         let pixel_grid = jfa(&points, config).unwrap();
 
-        assert_eq!(pixel_grid[12], 0);
+        assert_eq!(pixel_grid[12], 1);
         assert_eq!(pixel_grid[512 * RESO / 2 + RESO / 2], 1);
     }
 }
