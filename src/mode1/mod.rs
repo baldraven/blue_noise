@@ -26,7 +26,7 @@ fn best_grid_dimensions(n: usize, x: usize, y: usize) -> (usize, usize) {
     (best_c, best_r)
 }
 
-pub fn generate_points(n: usize, width: usize, height: usize) -> Vec<(f64, f64)> {
+pub fn generate_points(n: u32, width: usize, height: usize) -> Vec<(f64, f64)> {
     let mut points = Vec::new();
 
     let (cols, rows) = best_grid_dimensions(n as usize, width as usize, height as usize);
