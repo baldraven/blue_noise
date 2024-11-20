@@ -21,10 +21,10 @@ The help flag will show you all the configuration options.
 Default settings will generate Poisson-disk distributed points, in a 10\*10 box, with a minimal distance of 1 between points.
 It will then generate a Voronoï diagram using the Jump Flooding Algorithm (with `wgpu`), with resolution 512\*512 pixels, and display the result on a Javascript visualisation.
 
-<p align="center">
-  <img src="https://i.imgur.com/KG1w3Dw.png" />
+<p>
+  <img src="https://i.imgur.com/KG1w3Dw.png" width="350" />
 </p>
-https://imgur.com/01Shudbhttps://imgur.com/undefinedhttps://imgur.com/KG1w3Dw
+
 ## License
 
 Licensed under either of
