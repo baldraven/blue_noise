@@ -1,6 +1,9 @@
 use plotly::common::{ColorScalePalette, Mode};
 use plotly::{HeatMap, Layout, Plot, Scatter};
 
+use rand::seq::SliceRandom; // Requires the `rand` crate
+use rand::thread_rng;
+
 pub fn plot_heatmap_with_points(
     data: &[usize],
     points: &[(f64, f64)],
@@ -16,14 +19,25 @@ pub fn plot_heatmap_with_points(
         }
     }
 
-    // Convert the grid to a 2D f64 array (required by HeatMap)
-    let grid_f64: Vec<Vec<f64>> = grid
-        .into_iter()
-        .map(|row| row.into_iter().map(|v| v as f64).collect())
+    // Generate the range of colors and shuffle them
+    let mut colors: Vec<usize> = (1..=points.len()).collect();
+    colors.shuffle(&mut thread_rng());
+
+    // Create a mapping from region value to shuffled color index
+    let value_to_color: Vec<usize> = colors;
+
+    // Map the grid to the new color indices
+    let grid_mapped: Vec<Vec<f64>> = grid
+        .iter()
+        .map(|row| {
+            row.iter()
+                .map(|&value| value_to_color[value - 1] as f64) // Map based on the shuffled color
+                .collect()
+        })
         .collect();
 
     let colorscale = ColorScalePalette::Viridis;
-    let heatmap = HeatMap::new_z(grid_f64).color_scale(colorscale.into());
+    let heatmap = HeatMap::new_z(grid_mapped).color_scale(colorscale.into());
 
     let normalized_points: Vec<(f64, f64)> = points
         .iter()
