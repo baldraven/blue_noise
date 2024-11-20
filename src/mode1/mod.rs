@@ -29,7 +29,7 @@ fn best_grid_dimensions(n: usize, x: usize, y: usize) -> (usize, usize) {
 pub fn generate_points(n: u32, width: usize, height: usize) -> Vec<(f64, f64)> {
     let mut points = Vec::new();
 
-    let (cols, rows) = best_grid_dimensions(n as usize, width as usize, height as usize);
+    let (cols, rows) = best_grid_dimensions(n as usize, width, height);
 
     // Calculate the spacing between points
     let x_spacing = width as f64 / (cols + 1) as f64;
@@ -68,7 +68,7 @@ mod tests {
         let width = 10;
         let height = 5;
 
-        let expected_points = vec![
+        let expected_points = [
             (2., 1.25),
             (4., 1.25),
             (6., 1.25),

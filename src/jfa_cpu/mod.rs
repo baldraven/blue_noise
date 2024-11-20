@@ -1,6 +1,6 @@
 static RESO: usize = 512;
 
-fn jfa_step(pixel_grid: &mut Vec<usize>, normal_points: &Vec<(usize, usize)>, k: usize) {
+fn jfa_step(pixel_grid: &mut [usize], normal_points: &[(usize, usize)], k: usize) {
     for x in 0..RESO {
         for y in 0..RESO {
             let initial_poisition = x + y * RESO;
@@ -51,9 +51,9 @@ fn jfa_step(pixel_grid: &mut Vec<usize>, normal_points: &Vec<(usize, usize)>, k:
     }
 }
 
-pub fn jfa(points: &Vec<(f64, f64)>, config: (f64, f64)) -> Result<Vec<usize>, &'static str> {
+pub fn jfa(points: &[(f64, f64)], config: (f64, f64)) -> Result<Vec<usize>, &'static str> {
     let normal_points: Vec<(usize, usize)> = points
-        .into_iter()
+        .iter()
         .map(|(a, b)| {
             let x = ((a * RESO as f64 / config.0).min(RESO as f64 - 1.0)) as usize;
             let y = ((b * RESO as f64 / config.1).min(RESO as f64 - 1.0)) as usize;
@@ -61,7 +61,7 @@ pub fn jfa(points: &Vec<(f64, f64)>, config: (f64, f64)) -> Result<Vec<usize>, &
         })
         .collect();
 
-    let mut pixel_grid = vec![0; (RESO * RESO) as usize];
+    let mut pixel_grid = vec![0; RESO * RESO];
 
     // Mark the initial points on the grid with their respective color
     for (i, point) in normal_points.iter().enumerate() {

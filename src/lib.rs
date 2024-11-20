@@ -1,6 +1,6 @@
 pub mod cli;
-mod jfa_cpu;
-mod jfa_wgpu;
+pub mod jfa_cpu;
+pub mod jfa_wgpu;
 mod mode1;
 mod mode2;
 mod mode3;
@@ -21,10 +21,7 @@ pub fn generate_points(cli: &cli::Cli) -> Result<Vec<(f64, f64)>, &'static str> 
     }
 }
 
-pub fn generate_cells(
-    points: &Vec<(f64, f64)>,
-    cli: &cli::Cli,
-) -> Result<Vec<usize>, &'static str> {
+pub fn generate_cells(points: &[(f64, f64)], cli: &cli::Cli) -> Result<Vec<usize>, &'static str> {
     match cli.jfa_mode {
         cli::JfaMode::None => Ok(vec![]),
         cli::JfaMode::Gpu => {

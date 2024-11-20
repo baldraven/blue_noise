@@ -16,7 +16,7 @@ struct PoissonDisk {
 
 impl PoissonDisk {
     fn new(w: f64, h: f64, r: f64, k: usize) -> Self {
-        let cell_size = r / (2.0 as f64).sqrt();
+        let cell_size = r / 2.0_f64.sqrt();
         let grid_width = (w / cell_size).ceil() + 1.0;
         let grid_height = (h / cell_size).ceil() + 1.0;
 

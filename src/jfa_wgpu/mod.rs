@@ -1,6 +1,6 @@
 const RESO: usize = 512;
 
-pub async fn run(points: &Vec<(f64, f64)>, config: (f64, f64)) -> Vec<u32> {
+pub async fn run(points: &[(f64, f64)], config: (f64, f64)) -> Vec<u32> {
     let context = WgpuContext::new(
         RESO * RESO * std::mem::size_of::<u32>(),
         points.len() * std::mem::size_of::<(u32, u32)>(),
@@ -50,7 +50,7 @@ async fn jfa_step(context: &WgpuContext, local_buffer: &mut [u32], k: u32) {
     context.queue.write_buffer(
         &context.storage_buffer,
         0,
-        bytemuck::cast_slice(&local_buffer),
+        bytemuck::cast_slice(local_buffer),
     );
 
     context
@@ -117,9 +117,9 @@ async fn get_data<T: bytemuck::Pod>(
     staging_buffer.unmap();
 }
 
-fn init_normal_points(points: &Vec<(f64, f64)>, config: (f64, f64)) -> Vec<(u32, u32)> {
+fn init_normal_points(points: &[(f64, f64)], config: (f64, f64)) -> Vec<(u32, u32)> {
     points
-        .into_iter()
+        .iter()
         .map(|(a, b)| {
             let x = ((a * RESO as f64 / config.0).min(RESO as f64 - 1.0)) as u32;
             let y = ((b * RESO as f64 / config.1).min(RESO as f64 - 1.0)) as u32;
@@ -128,12 +128,12 @@ fn init_normal_points(points: &Vec<(f64, f64)>, config: (f64, f64)) -> Vec<(u32,
         .collect()
 }
 
-pub fn main(points: &Vec<(f64, f64)>, config: (f64, f64)) -> Result<Vec<usize>, &'static str> {
+pub fn main(points: &[(f64, f64)], config: (f64, f64)) -> Result<Vec<usize>, &'static str> {
     /*     env_logger::builder()
     .filter_level(log::LevelFilter::Info)
     .format_timestamp_nanos()
     .init(); */
-    let a = pollster::block_on(run(&points, config));
+    let a = pollster::block_on(run(points, config));
 
     Ok(a.into_iter().map(|x| x as usize).collect())
 }
