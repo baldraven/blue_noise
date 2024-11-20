@@ -25,6 +25,12 @@ It will then generate a Voronoï diagram using the Jump Flooding Algorithm (with
   <img src="https://i.imgur.com/KG1w3Dw.png" width="350" />
 </p>
 
+## Reference
+
+[Jump flooding in GPU with applications to Voronoi diagram and distance transform](http://dx.doi.org/10.1145/1111411.1111431)
+[Fast Poisson disk sampling in arbitrary dimensions](https://doi.org/10.1145/1278780.1278807)
+[Generating Blue Noise w/ Poisson Disk Sampling](https://a5huynh.github.io/posts/2019/poisson-disk-sampling/)
+
 ## License
 
 Licensed under either of
