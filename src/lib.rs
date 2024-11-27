@@ -36,8 +36,8 @@ pub fn generate_cells(points: &[(f64, f64)], cli: &cli::Cli) -> Result<Vec<usize
     }
 }
 
-pub fn generate_mesh(pixels: &Vec<usize>) -> Result<(), &'static str> {
-    mesh::generate_mesh(pixels)
+pub fn generate_mesh(pixels: &Vec<usize>, num_colors: usize) -> Result<(), &'static str> {
+    mesh::generate_mesh(pixels, num_colors)
 }
 
 pub fn handle_output(cli: &cli::Cli, points: &Vec<(f64, f64)>, pixels: Option<&Vec<usize>>) {
