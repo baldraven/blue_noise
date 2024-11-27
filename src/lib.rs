@@ -1,6 +1,7 @@
 pub mod cli;
 pub mod jfa_cpu;
 pub mod jfa_wgpu;
+pub mod mesh;
 mod mode1;
 mod mode2;
 mod mode3;
@@ -33,6 +34,10 @@ pub fn generate_cells(points: &[(f64, f64)], cli: &cli::Cli) -> Result<Vec<usize
             jfa_cpu::jfa(points, (cli.x, cli.y))
         }
     }
+}
+
+pub fn generate_mesh(pixels: &Vec<usize>) -> Result<(), &'static str> {
+    mesh::generate_mesh(pixels)
 }
 
 pub fn handle_output(cli: &cli::Cli, points: &Vec<(f64, f64)>, pixels: Option<&Vec<usize>>) {

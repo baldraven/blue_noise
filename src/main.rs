@@ -15,6 +15,11 @@ fn main() {
         std::process::exit(1);
     });
 
+    let _mesh = generate_mesh(&pixels).unwrap_or_else(|err| {
+        println!("Problem generating mesh: {err}");
+        std::process::exit(1);
+    });
+
     // Output
     handle_output(&cli, &points, Some(&pixels));
 }
