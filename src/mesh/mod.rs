@@ -1,5 +1,6 @@
-/* use honeycomb::core::prelude::CMapBuilder;
-use honeycomb::render::App; */
+use honeycomb::core::cmap::CMap2;
+use honeycomb::core::prelude::CMapBuilder;
+use honeycomb::render::App;
 use std::collections::HashMap;
 
 /// Extracts the vertices of the Voronoi cells from the pixel grid.
@@ -51,13 +52,66 @@ pub fn extract_voronoi_cell_vertices(
     }
 }
 
+pub fn calculate_face_centroid(vertices: &[Vec<usize>]) -> (f32, f32) {
+    let mut sum_x = 0.0;
+    let mut sum_y = 0.0;
+    for vertex in vertices {
+        sum_x += vertex[0] as f32;
+        sum_y += vertex[1] as f32;
+    }
+    (sum_x / vertices.len() as f32, sum_y / vertices.len() as f32)
+}
+
+pub fn sort_vertices_by_angle(vertices: &mut [Vec<usize>], centroid: (f32, f32)) {
+    vertices.sort_by(|a, b| {
+        let angle_a = (a[0] as f32 - centroid.0).atan2(a[1] as f32 - centroid.1);
+        let angle_b = (b[0] as f32 - centroid.0).atan2(b[1] as f32 - centroid.1);
+        angle_a.partial_cmp(&angle_b).unwrap()
+    });
+}
+
+pub fn insert_halfedge<'a>(map: &mut CMap2<f32>, halfedges: &mut HashMap<(&'a [usize], &'a [usize]), u32>, vertex_map: &HashMap<Vec<usize>, (u32, u32)>, he_count: &mut u32, face_vertices: &'a [Vec<usize>], i: usize) {
+    let u = &face_vertices[i];
+    let v = &face_vertices[(i + 1) % face_vertices.len()];
+    
+    *he_count += 1;
+    halfedges.insert((u, v), *he_count);
+    
+    let x = vertex_map[u].0 as f32;
+    let y = vertex_map[u].1 as f32;
+    map.force_write_vertex(*he_count, (x, y));
+    
+    if let Some(&he_idx) = halfedges.get(&(v, u)) {
+        map.force_two_sew(he_idx, *he_count);
+    } 
+}
+
 pub fn generate_mesh(pixels: &[usize], num_colors: usize) -> Result<(), &'static str> {
     let res = (pixels.len() as f64).sqrt() as usize;
     let mut color_vertices: Vec<Vec<Vec<usize>>> = vec![Vec::new(); num_colors];
     let mut vertex_map: HashMap<Vec<usize>, (u32, u32)> = HashMap::new();
     extract_voronoi_cell_vertices(pixels, res, &mut color_vertices, &mut vertex_map);
-    dbg!(color_vertices);
-    dbg!(vertex_map);
+
+    let mut halfedges: HashMap<(&[usize], &[usize]), u32> = HashMap::new();
+    let mut map: CMap2<f32> = CMapBuilder::default().n_darts(500).build().unwrap();
+
+    let mut he_count = 0;
+
+    for (_face_idx, face_vertices) in color_vertices.iter_mut().enumerate() {
+        let face_centroid = calculate_face_centroid(face_vertices);
+        sort_vertices_by_angle(face_vertices, face_centroid);
+
+        insert_halfedge(&mut map, &mut halfedges, &vertex_map, &mut he_count, face_vertices, 0);
+        for i in 1..face_vertices.len() {
+            insert_halfedge(&mut map, &mut halfedges, &vertex_map, &mut he_count, face_vertices, i);
+            map.force_one_link(he_count-1, he_count);
+        }
+        map.force_one_link(he_count, he_count- face_vertices.len() as u32 + 1); // not sure about the +1
+    }
+
+    let mut render_app = App::default();
+    render_app.add_capture(&map);
+    render_app.run();
 
     Ok(())
 }
@@ -100,5 +154,24 @@ mod tests {
 
         assert_eq!(color_vertices, expected_color_vertices);
         assert_eq!(vertex_map, expected_vertex_map);
+    }
+
+    #[test]
+    fn test_sort_vertices_by_angle() {
+        let mut vertices = vec![vec![1, 2], vec![2, 3], vec![3, 1]];
+        let centroid = ((1.0 + 2.0 + 3.0) / 3.0, (2.0 + 3.0 + 1.0) / 3.0);
+        sort_vertices_by_angle(&mut vertices, centroid);
+        assert!(
+            (vertices == vec![vec![3, 1], vec![1, 2], vec![2, 3]])
+                || (vertices == vec![vec![2, 3], vec![3, 1], vec![1, 2]])
+                || (vertices == vec![vec![1, 2], vec![2, 3], vec![3, 1]])
+        );
+    }
+
+    #[test]
+    fn test_calculate_face_centroid() {
+        let vertices = vec![vec![1, 2], vec![2, 3], vec![3, 1]];
+        let centroid = calculate_face_centroid(&vertices);
+        assert_eq!(centroid, ((1.0 + 2.0 + 3.0) / 3.0, (2.0 + 3.0 + 1.0) / 3.0));
     }
 }
