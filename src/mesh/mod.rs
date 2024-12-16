@@ -3,6 +3,28 @@ use honeycomb::core::prelude::{CMapBuilder, Vertex2};
 use honeycomb::render::App;
 use std::collections::HashMap;
 
+fn is_subset(sub: &[usize], sup: &[usize]) -> bool {
+    sub.iter().all(|x| sup.contains(x))
+}
+
+/// Remove vertices that are subsets of others
+fn remove_subsets(vertices: &mut Vec<Vec<usize>>) {
+    let mut i = 0;
+    while i < vertices.len() {
+        let mut j = 0;
+        while j < vertices.len() {
+            if i != j && is_subset(&vertices[i], &vertices[j]) {
+                vertices.remove(i);
+                i = i.saturating_sub(1);
+                j = 0;
+            } else {
+                j += 1;
+            }
+        }
+        i += 1;
+    }
+}
+
 /// Extracts the vertices of the Voronoi cells from the pixel grid.
 /// A vertex is only valid if there are 3 or more unique colors (0 for boundary).
 /// The keys of `Vertex_map` are the ordered Vec<usize> of the adjacent colors of the vertices, and are used in `color_vertices`, that tracks the vertices of each Voronoi cell.
@@ -56,32 +78,101 @@ pub fn extract_voronoi_cell_vertices(
     }
 }
 
-pub fn calculate_face_centroid(
-    vertices: &[Vec<usize>],
-    vertex_map: &HashMap<Vec<usize>, (u32, u32)>,
-) -> (f32, f32) {
-    let mut sum_x = 0.0;
-    let mut sum_y = 0.0;
-    for vertex in vertices {
-        let pos = vertex_map.get(vertex).unwrap();
-        sum_x += pos.0 as f32;
-        sum_y += pos.1 as f32;
+/// Returns the number of common elements between two sorted vectors
+fn count_common_elements(a: &[usize], b: &[usize]) -> usize {
+    let mut count = 0;
+    let mut i = 0;
+    let mut j = 0;
+
+    while i < a.len() && j < b.len() {
+        match a[i].cmp(&b[j]) {
+            std::cmp::Ordering::Equal => {
+                count += 1;
+                i += 1;
+                j += 1;
+            }
+            std::cmp::Ordering::Less => i += 1,
+            std::cmp::Ordering::Greater => j += 1,
+        }
     }
-    (sum_x / vertices.len() as f32, sum_y / vertices.len() as f32)
+    count
 }
 
-pub fn sort_vertices_by_angle(
-    vertices: &mut [Vec<usize>],
-    centroid: (f32, f32),
+fn choose_next_vertex(
+    current: &Vec<usize>,
+    candidates: Vec<(usize, &Vec<usize>)>,
+    vertex_map: &HashMap<Vec<usize>, (u32, u32)>,
+    sorted: &[Vec<usize>],
+) -> usize {
+    let pos_current = vertex_map.get(current).unwrap();
+    let pos_prev = if sorted.len() > 1 {
+        vertex_map.get(&sorted[sorted.len() - 2]).unwrap()
+    } else {
+        vertex_map.get(candidates[1].1).unwrap()
+    };
+
+    candidates
+        .into_iter()
+        .max_by_key(|(_, v)| {
+            let pos_candidate = vertex_map.get(*v).unwrap();
+            let dx1 = pos_current.0 as i32 - pos_prev.0 as i32;
+            let dy1 = pos_current.1 as i32 - pos_prev.1 as i32;
+            let dx2 = pos_candidate.0 as i32 - pos_current.0 as i32;
+            let dy2 = pos_candidate.1 as i32 - pos_current.1 as i32;
+            dx1 * dy2 - dy1 * dx2
+        })
+        .unwrap()
+        .0
+}
+
+/// Sort vertices of a face using topological information
+pub fn sort_vertices_topologically(
+    vertices: &mut Vec<Vec<usize>>,
     vertex_map: &HashMap<Vec<usize>, (u32, u32)>,
 ) {
-    vertices.sort_by(|a, b| {
-        let pos_a = vertex_map.get(a).unwrap();
-        let pos_b = vertex_map.get(b).unwrap();
-        let angle_a = (pos_a.0 as f32 - centroid.0).atan2(pos_a.1 as f32 - centroid.1);
-        let angle_b = (pos_b.0 as f32 - centroid.0).atan2(pos_b.1 as f32 - centroid.1);
-        angle_b.partial_cmp(&angle_a).unwrap() // Swapped a and b to reverse order
-    });
+    assert!(vertices.len() >= 3);
+
+    let mut sorted = Vec::with_capacity(vertices.len());
+    let mut used = vec![false; vertices.len()];
+    // Start with first vertex
+    sorted.push(vertices[0].clone());
+    used[0] = true;
+
+    dbg!(&vertices);
+
+    // For each position to fill
+    while sorted.len() < vertices.len() {
+        let current = sorted.last().unwrap();
+
+        // Find next vertex (should share exactly 2 colors with current)
+        let mut candidates = Vec::new();
+        for (i, v) in vertices.iter().enumerate() {
+            if !used[i] && count_common_elements(current, v) == 2 {
+                candidates.push((i, v));
+            }
+        }
+
+        match candidates.len() {
+            0 => {
+                assert!(count_common_elements(current, &vertices[0]) == 2);
+            }
+            1 => {
+                // last iteration
+                let (idx, v) = candidates[0];
+                sorted.push(v.clone());
+                used[idx] = true;
+            }
+            _ => {
+                // If we have 2 candidates (should happen only for the first vertex),
+                // choose the one that makes a counterclockwise turn
+                let chosen_idx = choose_next_vertex(current, candidates, vertex_map, &sorted);
+                sorted.push(vertices[chosen_idx].clone());
+                used[chosen_idx] = true;
+            }
+        }
+    }
+
+    *vertices = sorted;
 }
 
 /// Generates a combinatorial map from a pixel grid by sewing darts between vertices.
@@ -101,10 +192,14 @@ pub fn generate_mesh(pixels: &[usize], num_colors: usize) -> Result<(), &'static
 
     // Process each face (color region)
     for face_vertices in color_vertices.iter_mut() {
-        // Sort vertices around face centroid for consistent orientation
-        // TODO: use a topological algorithm instead
-        let face_centroid = calculate_face_centroid(face_vertices, &vertex_map);
-        sort_vertices_by_angle(face_vertices, face_centroid, &vertex_map);
+        if face_vertices.len() < 3 {
+            continue;
+        }
+
+        remove_subsets(face_vertices);
+
+        // Sort vertices using topological information instead of angles
+        sort_vertices_topologically(face_vertices, &vertex_map);
 
         // Add darts for this face. at the end we need the exact number of darts or it will panic
         map.add_free_darts(face_vertices.len());
